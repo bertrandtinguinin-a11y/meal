@@ -15,7 +15,7 @@ export async function GET() {
 
   // Pour chaque indicateur, récupérer la dernière valeur calculée
   const kpis = await Promise.all(
-    (indicateurs || []).map(async (ind) => {
+    (indicateurs || []).map(async (ind: any) => {
       const { data: valeurs } = await supabase
         .from("valeurs_calculees")
         .select("*")

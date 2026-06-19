@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import ClientLayout from "@/components/ClientLayout";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "MEAL-Pro — Monitoring & Evaluation",
@@ -23,9 +23,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="icon" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem("meal_dark");
+                if (t === "true") document.documentElement.classList.add("dark");
+              } catch {}
+            `,
+          }}
+        />
       </head>
       <body>
-        <ClientLayout>{children}</ClientLayout>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
