@@ -1,26 +1,40 @@
-// API Route: /api/indicateurs — Indicateurs personnalisables
-// L'utilisateur crée ses propres indicateurs. Démarre vide.
+// API Route: /api/indicateurs — Indicateurs personnalisables (Supabase)
 import { NextResponse } from "next/server";
-
-// Store vide — les utilisateurs ajouteront leurs indicateurs
-interface Indicateur { id: string; code: string; nom: string; categorie: string; type_chart: string; unite: string; objectif: number; baseline: number; icone: string; }
-const indicateursData: Indicateur[] = [];
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  return NextResponse.json(indicateursData);
+  const { data, error } = await supabase
+    .from("indicateurs")
+    .select("*")
+    .order("ordre", { ascending: true });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data || []);
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const ind: Indicateur = {
-      id: String(Date.now()), code: body.code || "", nom: body.nom || "",
-      categorie: body.categorie || "", type_chart: body.type_chart || "barre",
-      unite: body.unite || "", objectif: body.objectif || 0, baseline: body.baseline || 0,
-      icone: body.icone || "📊",
-    };
-    indicateursData.push(ind);
-    return NextResponse.json(ind, { status: 201 });
+    const { data, error } = await supabase
+      .from("indicateurs")
+      .insert({
+        code: body.code,
+        nom: body.nom,
+        categorie: body.categorie,
+        type_chart: body.type_chart || "barre",
+        unite: body.unite || "",
+        objectif: body.objectif || 0,
+        baseline: body.baseline || 0,
+        icone: body.icone || "📊",
+        description: body.description || "",
+        desagregation: body.desagregation || [],
+        ordre: body.ordre || 0,
+      })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }

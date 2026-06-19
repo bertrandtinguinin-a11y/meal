@@ -1,24 +1,35 @@
-// API Route: /api/activities — suivi d'activités terrain
-// Démarre vide. Les activités sont créées par l'utilisateur.
+// API Route: /api/activities — Suivi d'activités terrain (Supabase)
 import { NextResponse } from "next/server";
-
-interface Activity { id: string; type: string; titre: string; description: string; date: string; responsable: string; statut: string; }
-const activities: Activity[] = [];
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  return NextResponse.json(activities);
+  const { data, error } = await supabase
+    .from("activities")
+    .select("*")
+    .order("date", { ascending: false });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data || []);
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const a: Activity = {
-      id: String(Date.now()), type: body.type || "", titre: body.titre || "",
-      description: body.description || "", date: body.date || new Date().toISOString().split("T")[0],
-      responsable: body.responsable || "", statut: body.statut || "planifie",
-    };
-    activities.push(a);
-    return NextResponse.json(a, { status: 201 });
+    const { data, error } = await supabase
+      .from("activities")
+      .insert({
+        type: body.type || "",
+        titre: body.titre || "",
+        description: body.description || "",
+        date: body.date || new Date().toISOString().split("T")[0],
+        responsable: body.responsable || "",
+        statut: body.statut || "planifie",
+      })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }

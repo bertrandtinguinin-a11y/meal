@@ -1,6 +1,6 @@
-// API Route: /api/validation — Approuver/Rejeter avec feedback
+// API Route: /api/validation — Approuver/Rejeter avec feedback (Supabase)
 import { NextResponse } from "next/server";
-import { collectesData, correctionsData, type CorrectionData } from "@/lib/data-store";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   try {
@@ -10,22 +10,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "collecte_id et action requis" }, { status: 400 });
     }
 
-    const idx = collectesData.findIndex(c => c.id === collecte_id);
-    if (idx === -1) {
+    // Vérifier que la collecte existe
+    const { data: collecte, error: findErr } = await supabase
+      .from("collectes")
+      .select("*")
+      .eq("id", collecte_id)
+      .single();
+
+    if (findErr || !collecte) {
       return NextResponse.json({ error: "Collecte introuvable" }, { status: 404 });
     }
 
     if (action === "valider") {
-      collectesData[idx] = {
-        ...collectesData[idx],
-        statut: "valide",
-        validation_date: new Date().toISOString(),
-        validated_by: faite_par || "Superviseur",
-      };
+      const { data, error } = await supabase
+        .from("collectes")
+        .update({
+          statut: "valide",
+          validation_date: new Date().toISOString(),
+          validated_by: faite_par || "Superviseur",
+        })
+        .eq("id", collecte_id)
+        .select()
+        .single();
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
       return NextResponse.json({
         success: true,
         message: "Collecte validée ✅ — indicateur mis à jour",
-        collecte: collectesData[idx],
+        collecte: data,
       });
     }
 
@@ -34,28 +47,36 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Un message de correction est requis" }, { status: 400 });
       }
 
-      collectesData[idx] = {
-        ...collectesData[idx],
-        statut: "rejete",
-        validation_date: new Date().toISOString(),
-        validated_by: faite_par || "Superviseur",
-      };
+      // Mettre à jour le statut de la collecte
+      const { error: updateErr } = await supabase
+        .from("collectes")
+        .update({
+          statut: "rejete",
+          validation_date: new Date().toISOString(),
+          validated_by: faite_par || "Superviseur",
+        })
+        .eq("id", collecte_id);
 
-      const correction: CorrectionData = {
-        id: `corr${Date.now()}`,
-        collecte_id,
-        message,
-        champs_corriges: champs_corriges || [],
-        faite_par: faite_par || "Superviseur",
-        repondu: false,
-        created_at: new Date().toISOString(),
-      };
-      correctionsData.unshift(correction);
+      if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+
+      // Créer une correction
+      const { data: correction, error: corrErr } = await supabase
+        .from("corrections")
+        .insert({
+          collecte_id,
+          message,
+          champs_corriges: champs_corriges || [],
+          faite_par: faite_par || "Superviseur",
+          repondu: false,
+        })
+        .select()
+        .single();
+
+      if (corrErr) return NextResponse.json({ error: corrErr.message }, { status: 500 });
 
       return NextResponse.json({
         success: true,
         message: "🔴 Collecte rejetée — feedback envoyé au terrain",
-        collecte: collectesData[idx],
         correction,
       });
     }
@@ -69,8 +90,11 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const collecteId = searchParams.get("collecte_id");
-  if (collecteId) {
-    return NextResponse.json(correctionsData.filter(c => c.collecte_id === collecteId));
-  }
-  return NextResponse.json(correctionsData);
+
+  let query = supabase.from("corrections").select("*").order("created_at", { ascending: false });
+  if (collecteId) query = query.eq("collecte_id", collecteId);
+
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data || []);
 }

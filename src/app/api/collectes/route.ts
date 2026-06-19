@@ -1,9 +1,6 @@
-// API Route: /api/collectes — CRUD pour les soumissions terrain
+// API Route: /api/collectes — CRUD soumissions terrain (Supabase)
 import { NextResponse } from "next/server";
-import { collectesData, type CollecteData } from "@/lib/data-store";
-
-// Use shared data
-const data: CollecteData[] = collectesData;
+import { supabase } from "@/lib/supabase";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,34 +8,40 @@ export async function GET(request: Request) {
   const collecteur = searchParams.get("collecteur");
   const limit = parseInt(searchParams.get("limit") || "100");
 
-  let result = [...data];
-  if (statut) result = result.filter(c => c.statut === statut);
-  if (collecteur) result = result.filter(c => c.collecteur_nom?.toLowerCase().includes(collecteur.toLowerCase()));
-  result = result.slice(0, limit);
+  let query = supabase
+    .from("collectes")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
-  return NextResponse.json(result);
+  if (statut) query = query.eq("statut", statut);
+  if (collecteur) query = query.ilike("collecteur_id", `%${collecteur}%`);
+
+  const { data, error } = await query;
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data || []);
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const newCollecte: CollecteData = {
-      id: String(Date.now()),
-      collecteur_id: body.collecteur_id || "",
-      collecteur_nom: body.collecteur_nom || "",
-      indicateur_id: body.indicateur_id || "",
-      indicateur_nom: body.indicateur_nom || "",
-      indicateur_code: body.indicateur_code || "",
-      localite: body.localite || "",
-      zone: body.zone || "",
-      date_collecte: body.date_collecte || new Date().toISOString().split("T")[0],
-      statut: "en_attente",
-      donnees: body.donnees || {},
-      note_terrain: body.note_terrain || "",
-      created_at: new Date().toISOString(),
-    };
-    data.unshift(newCollecte);
-    return NextResponse.json(newCollecte, { status: 201 });
+    const { data, error } = await supabase
+      .from("collectes")
+      .insert({
+        collecteur_id: body.collecteur_id,
+        indicateur_id: body.indicateur_id,
+        localite: body.localite,
+        zone: body.zone,
+        date_collecte: body.date_collecte || new Date().toISOString().split("T")[0],
+        donnees: body.donnees || {},
+        note_terrain: body.note_terrain || "",
+        statut: "en_attente",
+      })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
@@ -47,10 +50,15 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const idx = data.findIndex(c => c.id === body.id);
-    if (idx === -1) return NextResponse.json({ error: "Collecte introuvable" }, { status: 404 });
-    data[idx] = { ...data[idx], ...body, updated_at: new Date().toISOString() };
-    return NextResponse.json(data[idx]);
+    const { data, error } = await supabase
+      .from("collectes")
+      .update({ ...body, updated_at: new Date().toISOString() })
+      .eq("id", body.id)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
   } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }

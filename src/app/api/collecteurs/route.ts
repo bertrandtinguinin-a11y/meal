@@ -1,23 +1,33 @@
-// API Route: /api/collecteurs — Agents de terrain
-// L'utilisateur crée ses propres collecteurs. Démarre vide.
+// API Route: /api/collecteurs — Agents de terrain (Supabase)
 import { NextResponse } from "next/server";
-
-interface Collecteur { id: string; nom: string; role: string; zone: string; telephone: string; }
-const collecteursData: Collecteur[] = [];
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  return NextResponse.json(collecteursData);
+  const { data, error } = await supabase
+    .from("collecteurs")
+    .select("*")
+    .order("nom", { ascending: true });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data || []);
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const c: Collecteur = {
-      id: String(Date.now()), nom: body.nom || "", role: body.role || "agent_terrain",
-      zone: body.zone || "", telephone: body.telephone || "",
-    };
-    collecteursData.push(c);
-    return NextResponse.json(c, { status: 201 });
+    const { data, error } = await supabase
+      .from("collecteurs")
+      .insert({
+        nom: body.nom,
+        role: body.role || "agent_terrain",
+        zone: body.zone || "",
+        telephone: body.telephone || "",
+      })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
