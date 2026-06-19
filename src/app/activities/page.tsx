@@ -28,7 +28,7 @@ export default function ActivitiesPage() {
   useEffect(() => {
     fetch("/api/activities")
       .then((r) => r.json())
-      .then((d) => setActivities(d.activities || []))
+      .then((d) => setActivities(d || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

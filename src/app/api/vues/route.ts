@@ -1,47 +1,10 @@
 // API Route: /api/vues — Vues d'analyse personnalisables
 import { NextResponse } from "next/server";
 
-let vues = [
-  {
-    id: "v1",
-    nom: "Dashboard Suivi Trimestriel",
-    description: "Vue par défaut — indicateurs clés du trimestre",
-    est_defaut: true,
-    created_at: "2026-03-01",
-    config: [
-      { indicateur_code: "P-1", type_chart: "barre", taille: "pleine", periode: 6 },
-      { indicateur_code: "P-4", type_chart: "barre", taille: "pleine", periode: 6 },
-      { indicateur_code: "R-1", type_chart: "jauge", taille: "demi", periode: 3 },
-      { indicateur_code: "G-1", type_chart: "jauge", taille: "demi", periode: 3 },
-      { indicateur_code: "P-7", type_chart: "ligne", taille: "pleine", periode: 6 },
-    ],
-  },
-  {
-    id: "v2",
-    nom: "Focus Genre",
-    description: "Indicateurs désagrégés par sexe",
-    est_defaut: false,
-    created_at: "2026-03-15",
-    config: [
-      { indicateur_code: "P-1F", type_chart: "jauge", taille: "pleine", periode: 3 },
-      { indicateur_code: "G-1", type_chart: "barre", taille: "pleine", periode: 6 },
-      { indicateur_code: "G-2", type_chart: "barre", taille: "pleine", periode: 6 },
-    ],
-  },
-  {
-    id: "v3",
-    nom: "Suivi Production Agricole",
-    description: "Rendements et distribution d'intrants",
-    est_defaut: false,
-    created_at: "2026-03-20",
-    config: [
-      { indicateur_code: "R-3", type_chart: "ligne", taille: "pleine", periode: 6 },
-      { indicateur_code: "P-4", type_chart: "barre", taille: "pleine", periode: 6 },
-      { indicateur_code: "P-5", type_chart: "jauge", taille: "demi", periode: 3 },
-      { indicateur_code: "P-6", type_chart: "barre", taille: "demi", periode: 6 },
-    ],
-  },
-];
+type VueConfig = { indicateur_id: string; type_chart: string; taille: string; periode: number };
+interface Vue { id: string; nom: string; description: string; config: VueConfig[]; est_defaut: boolean; created_at: string; }
+
+let vues: Vue[] = [];
 
 export async function GET() {
   return NextResponse.json(vues);
