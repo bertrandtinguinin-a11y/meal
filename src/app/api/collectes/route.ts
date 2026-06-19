@@ -6,11 +6,11 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const statut = searchParams.get("statut");
   const collecteur = searchParams.get("collecteur");
-  const limit = parseInt(searchParams.get("limit") || "100");
+  const limit = parseInt(searchParams.get("limit") || "500");
 
   let query = supabase
     .from("collectes")
-    .select("*")
+    .select("*, collecteurs(nom), indicateurs(nom, code)")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -19,7 +19,18 @@ export async function GET(request: Request) {
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data || []);
+
+  // Aplatir les champs joints pour compatibilité
+  const result = (data || []).map((c: any) => ({
+    ...c,
+    collecteur_nom: c.collecteurs?.nom || "",
+    indicateur_nom: c.indicateurs?.nom || "",
+    indicateur_code: c.indicateurs?.code || "",
+    collecteurs: undefined,
+    indicateurs: undefined,
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST(request: Request) {

@@ -54,13 +54,15 @@ export default function Home() {
           Collecte terrain, validation, analyse personnalisée. <br />Tout-en-un, zéro papier.
         </p>
 
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[var(--primary)]/25 hover:bg-[var(--primary-dark)] transition-all active:scale-[0.98]"
-        >
-          Accéder au Dashboard
-          <span className="text-lg">→</span>
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[var(--primary)]/25 hover:bg-[var(--primary-dark)] transition-all active:scale-[0.98]"
+          >
+            Accéder au tableau de bord
+            <span className="text-lg">→</span>
+          </Link>
+        </div>
       </section>
 
       {/* ── Fonctionnalités ── */}

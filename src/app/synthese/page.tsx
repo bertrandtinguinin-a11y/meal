@@ -30,8 +30,7 @@ export default function SynthesePage() {
   const [recherche, setRecherche] = useState("");
   const [filtreStatut, setFiltreStatut] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+
   const [tri, setTri] = useState({ colonne: "date_collecte", sens: "desc" as "asc" | "desc" });
 
   // Chargement des données
@@ -130,8 +129,8 @@ export default function SynthesePage() {
         <div>
           <h2>Synthèse &amp; Rapports</h2>
           <p className="page-subtitle">
-            {totalItems > 0
-              ? `${totalItems} enregistrements · ${stats.valides} validés · ${stats.enAttente} en attente`
+            {stats.total > 0
+              ? `${stats.total} enregistrements · ${stats.valides} validés · ${stats.enAttente} en attente`
               : "Consultez et filtrez l'ensemble des collectes terrain"}
           </p>
         </div>
