@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 /** Page active basée sur l'URL */
 function getActiveTab(path: string): string {
   if (path.startsWith("/dashboard")) return "dash";
+  if (path.startsWith("/activities")) return "act";
+  if (path.startsWith("/collecte")) return "collect";
+  if (path.startsWith("/validation")) return "valid";
+  if (path.startsWith("/analyse")) return "anal";
   return "dash";
 }
 
@@ -35,10 +39,16 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   const navigateTo = (tab: string) => {
     setActiveTab(tab);
-    if (tab === "dash") {
-      if (window.location.pathname !== "/dashboard") {
-        window.location.href = "/dashboard";
-      }
+    const paths: Record<string, string> = {
+      dash: "/dashboard",
+      act: "/activities",
+      collect: "/collecte",
+      valid: "/validation",
+      anal: "/analyse",
+    };
+    const target = paths[tab];
+    if (target && window.location.pathname !== target) {
+      window.location.href = target;
     }
   };
 
@@ -51,10 +61,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   const navItems = [
     { id: "dash", icon: "📊", label: "Bord" },
-    { id: "act", icon: "✓", label: "Activités" },
-    { id: "collect", icon: "+", label: "Collecte", isAdd: true },
-    { id: "map", icon: "🗺", label: "Carte" },
-    { id: "profile", icon: "👤", label: "Profil" },
+    { id: "act", icon: "📋", label: "Activités" },
+    { id: "collect", icon: "📝", label: "Collecte", isAdd: true },
+    { id: "valid", icon: "✅", label: "Validation" },
+    { id: "anal", icon: "🎨", label: "Analyse" },
   ];
 
   // Rendu squelette pour le SSR (évite flash du mauvais thème)

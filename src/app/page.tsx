@@ -1,56 +1,91 @@
 import Link from "next/link";
 
+const features = [
+  {
+    icon: "📊",
+    title: "KPIs en temps réel",
+    desc: "Visualisez et suivez vos indicateurs clés avec des graphiques interactifs et des barres de progression.",
+  },
+  {
+    icon: "🧠",
+    title: "Analyse intelligente",
+    desc: "L'IA analyse vos données, détecte les tendances et génère des recommandations actionnables.",
+  },
+  {
+    icon: "📱",
+    title: "Application mobile",
+    desc: "Installez MEAL sur votre téléphone comme une app native grâce à la technologie PWA.",
+  },
+  {
+    icon: "📈",
+    title: "Prévisions",
+    desc: "Anticipez l'évolution de vos indicateurs avec des modèles de régression linéaire intégrés.",
+  },
+  {
+    icon: "🌙",
+    title: "Mode sombre",
+    desc: "Travaillez confortablement de jour comme de nuit avec un thème adaptatif.",
+  },
+  {
+    icon: "📋",
+    title: "Rapports automatiques",
+    desc: "Générez des rapports de performance structurés avec recommandations et prévisions.",
+  },
+];
+
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
-      <div className="mb-6">
-        <div style={{
-          width: 80, height: 80, borderRadius: 20,
-          background: "linear-gradient(150deg, var(--mil), var(--feuille))",
-          display: "grid", placeItems: "center", margin: "0 auto",
-        }}>
-          <span style={{ fontSize: 40, fontWeight: 800, color: "var(--terre)" }}>M</span>
+    <div className="animate-fade-in">
+      {/* ── Hero ── */}
+      <section className="flex flex-col items-center text-center py-16 sm:py-24">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--primary)] flex items-center justify-center mb-6 shadow-lg shadow-[var(--primary)]/20">
+          <span className="text-white text-3xl font-bold">M</span>
         </div>
-      </div>
-      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-3" style={{ color: "var(--ivoire)" }}>
-        MEAL
-      </h1>
-      <p className="text-lg mb-2" style={{ color: "var(--muet)" }}>
-        <b style={{ color: "var(--mil)" }}>M</b>onitoring &{" "}
-        <b style={{ color: "var(--mil)" }}>E</b>valuation with{" "}
-        <b style={{ color: "var(--mil)" }}>A</b>I{" "}
-        <b style={{ color: "var(--mil)" }}>L</b>ogic
-      </p>
-      <p className="mb-10 max-w-md" style={{ color: "var(--muet)" }}>
-        Suivez vos KPIs en temps réel, analysez les tendances avec l&apos;IA,
-        et prenez des décisions éclairées.
-      </p>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[var(--foreground)] mb-4">
+          MEAL
+        </h1>
+        <p className="text-lg sm:text-xl text-[var(--muted-foreground)] max-w-xl mb-2">
+          <strong className="text-[var(--foreground)]">M</strong>onitoring &{" "}
+          <strong className="text-[var(--foreground)]">E</strong>valuation with{" "}
+          <strong className="text-[var(--foreground)]">A</strong>I{" "}
+          <strong className="text-[var(--foreground)]">L</strong>ogic
+        </p>
+        <p className="text-sm text-[var(--muted-foreground)] mb-10 max-w-md">
+          Suivez vos indicateurs, analysez les tendances avec l&apos;IA, et prenez des décisions éclairées.
+        </p>
 
-      <div className="grid gap-4 sm:grid-cols-3 mb-10 max-w-2xl" style={{ width: "100%" }}>
-        {[
-          { emoji: "🎯", title: "KPIs Temps Réel", desc: "Visualisez vos indicateurs clés" },
-          { emoji: "🧠", title: "IA Intégrée", desc: "Analyses prédictives et recommandations" },
-          { emoji: "📱", title: "PWA Mobile", desc: "Installez sur mobile en 2 clics" },
-        ].map((f) => (
-          <div key={f.title} className="card" style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 28, marginBottom: 6 }}>{f.emoji}</div>
-            <h3 style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>{f.title}</h3>
-            <p style={{ fontSize: 11, color: "var(--muet)" }}>{f.desc}</p>
-          </div>
-        ))}
-      </div>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-[var(--primary)]/25 hover:bg-[var(--primary-dark)] transition-all active:scale-[0.98]"
+        >
+          Accéder au Dashboard
+          <span className="text-lg">→</span>
+        </Link>
+      </section>
 
-      <Link
-        href="/dashboard"
-        className="save-btn"
-        style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 32px", height: 46, fontSize: 14, textDecoration: "none", width: "auto", minWidth: 220 }}
-      >
-        Accéder au Dashboard →
-      </Link>
+      {/* ── Fonctionnalités ── */}
+      <section className="py-12 sm:py-16">
+        <h2 className="text-center text-sm font-bold uppercase tracking-widest text-[var(--muted-foreground)] mb-8">
+          Fonctionnalités
+        </h2>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="rounded-xl border border-[var(--border)] bg-white dark:bg-[var(--card)] p-5 hover:shadow-md transition-all duration-200"
+            >
+              <div className="text-2xl mb-3">{f.icon}</div>
+              <h3 className="text-sm font-bold text-[var(--foreground)] mb-1.5">{f.title}</h3>
+              <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <div style={{ marginTop: 40, fontSize: 10, color: "var(--muet-2)" }}>
-        Éco-conçu · SVG natif · Zéro librairie lourde · 🌿 Sobriété activable
-      </div>
+      {/* ── Footer ── */}
+      <footer className="py-8 text-center text-xs text-[var(--muted-foreground)] border-t border-[var(--border)]">
+        MEAL • Monitoring & Evaluation with AI Logic • Next.js + Supabase
+      </footer>
     </div>
   );
 }
