@@ -1,36 +1,691 @@
 @import "tailwindcss";
 
+/* ============================================================
+   DESIGN SYSTEM MEAL — Palette Agronomie / Terre
+   Éco-dark par défaut (OLED friendly)
+   Aucune police web téléchargée (sobriété + perf)
+   ============================================================ */
+
 :root {
-  --primary: #15803d;
-  --primary-light: #22c55e;
-  --primary-dark: #166534;
-  --background: #f0fdf4;
-  --foreground: #052e16;
-  --card: #ffffff;
-  --card-foreground: #052e16;
-  --muted: #f0fdf4;
-  --muted-foreground: #6b7280;
-  --border: #dcfce7;
-  --destructive: #ef4444;
-  --warning: #f59e0b;
+  /* --- Palette Terre (thème sombre par défaut) --- */
+  --terre: #14130E;
+  --terre-2: #1E1C15;
+  --terre-3: #27231A;
+  --terre-4: #322C20;
+  --ligne: #352F22;
+  --ivoire: #ECE6D6;
+  --muet: #9E9682;
+  --muet-2: #766F5D;
+
+  /* --- Couleurs fonctionnelles --- */
+  --mil: #CBA14E;        /* Primaire - Millet/récolte */
+  --feuille: #6FA86B;    /* Secondaire - Feuille/croissance */
+  --eau: #5B9AA6;         /* Info - Eau */
+  --ok: #5BBE7A;          /* Succès */
+  --warn: #E0B341;        /* Attention */
+  --alert: #D9694E;       /* Alerte (terracotta, pas rouge criard) */
+
+  /* --- Aliasing pour compatibilité --- */
+  --primary: var(--mil);
+  --primary-light: #d4b15f;
+  --primary-dark: #a88a3a;
+  --background: var(--terre);
+  --foreground: var(--ivoire);
+  --card: var(--terre-2);
+  --card-foreground: var(--ivoire);
+  --muted: var(--terre-3);
+  --muted-foreground: var(--muet);
+  --border: var(--ligne);
+  --destructive: var(--alert);
+  --warning: var(--warn);
 }
 
-* {
-  box-sizing: border-box;
+/* --- Thème clair (plein soleil terrain) --- */
+.clair {
+  --terre: #EFEADC;
+  --terre-2: #F7F2E7;
+  --terre-3: #FFFFFF;
+  --terre-4: #F0EADA;
+  --ligne: #E2DAC7;
+  --ivoire: #231F16;
+  --muet: #6E6757;
+  --muet-2: #928A77;
+  --mil: #A87C25;
+  --feuille: #4C7E49;
+  --eau: #3E7E8C;
+
+  --background: var(--terre);
+  --foreground: var(--ivoire);
+  --card: var(--terre-2);
+  --card-foreground: var(--ivoire);
+  --muted: var(--terre-3);
+  --muted-foreground: var(--muet);
+  --border: var(--ligne);
 }
+
+/* --- Mode sobriété (coupe animations, médias décoratifs) --- */
+.sobre * {
+  animation: none !important;
+  transition: none !important;
+}
+.sobre .eco-bg {
+  display: none;
+}
+.sobre .logo-deco {
+  background: var(--terre-4) !important;
+}
+
+/* --- Accessibilité / préférences système --- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* --- Base --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background-color: var(--background);
+  background: radial-gradient(1100px 700px at 82% -8%, #211d12 0%, transparent 60%),
+              radial-gradient(900px 600px at -5% 105%, #1a2018 0%, transparent 55%),
+              var(--terre);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-.dark {
-  --background: #052e16;
-  --foreground: #f0fdf4;
-  --card: #0f3d1e;
-  --card-foreground: #f0fdf4;
-  --muted: #0f3d1e;
-  --muted-foreground: #9ca3af;
-  --border: #166534;
+.clair body {
+  background: var(--terre);
+}
+
+/* --- Utilitaires --- */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* --- Layout principal (simule téléphone) --- */
+.app-container {
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* --- Barre d'état --- */
+.status-bar {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-size: 11px;
+  color: var(--muet);
+  flex: none;
+}
+.status-bar time {
+  color: var(--ivoire);
+  font-weight: 600;
+}
+
+/* --- En-tête --- */
+.app-header {
+  padding: 4px 16px 10px;
+  flex: none;
+}
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex: none;
+  background: linear-gradient(150deg, var(--mil), var(--feuille));
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.logo::after {
+  content: "M";
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--terre);
+}
+.brand h1 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.brand small {
+  display: block;
+  font-size: 10px;
+  color: var(--muet);
+  letter-spacing: 0.4px;
+  font-weight: 500;
+}
+.header-btns {
+  display: flex;
+  gap: 6px;
+}
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid var(--ligne);
+  background: var(--terre-2);
+  color: var(--ivoire);
+  font-size: 14px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 200ms;
+}
+.icon-btn:hover {
+  background: var(--terre-3);
+  border-color: var(--muet-2);
+}
+.icon-btn:focus-visible {
+  outline: 2px solid var(--mil);
+  outline-offset: 2px;
+}
+
+/* --- Bandeau éco (SIGNATURE) --- */
+.eco-banner {
+  margin: 8px 16px 0;
+  border: 1px solid var(--ligne);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--terre-3), var(--terre-2));
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  cursor: pointer;
+  transition: border-color 200ms;
+}
+.eco-banner:hover {
+  border-color: var(--feuille);
+}
+.eco-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: rgba(111, 168, 107, 0.16);
+  color: var(--feuille);
+  font-size: 14px;
+}
+.eco-body {
+  flex: 1;
+  min-width: 0;
+}
+.eco-label {
+  font-size: 10px;
+  color: var(--muet);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.eco-value {
+  font-size: 12px;
+  font-weight: 600;
+}
+.eco-value em {
+  font-style: normal;
+  color: var(--feuille);
+}
+.eco-gauge {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--ligne);
+  margin-top: 4px;
+  overflow: hidden;
+}
+.eco-gauge-inner {
+  display: block;
+  height: 100%;
+  width: 78%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--feuille), var(--mil));
+  transition: width 300ms;
+}
+
+/* --- Navigation basse (tab bar) --- */
+.bottom-nav {
+  flex: none;
+  display: flex;
+  border-top: 1px solid var(--ligne);
+  background: var(--terre-2);
+  position: sticky;
+  bottom: 0;
+}
+.bottom-nav button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--muet-2);
+  cursor: pointer;
+  padding: 8px 0 10px;
+  font-size: 9.5px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: color 200ms;
+}
+.bottom-nav button .nav-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.bottom-nav button[aria-current="page"] {
+  color: var(--mil);
+}
+.bottom-nav button:focus-visible {
+  outline: 2px solid var(--mil);
+  outline-offset: -3px;
+}
+.bottom-nav .nav-add {
+  position: relative;
+  top: -8px;
+}
+.bottom-nav .nav-add .nav-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(150deg, var(--mil), var(--feuille));
+  color: var(--terre);
+  box-shadow: 0 8px 20px -6px rgba(203, 161, 78, 0.6);
+  font-size: 24px;
+}
+
+/* --- Contenu scrollable --- */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 16px;
+  scrollbar-width: thin;
+}
+.scroll-area::-webkit-scrollbar {
+  width: 5px;
+}
+.scroll-area::-webkit-scrollbar-thumb {
+  background: var(--ligne);
+  border-radius: 3px;
+}
+
+/* --- Section header --- */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.section-header h2 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--muet-2);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 3px;
+}
+.period-badge {
+  font-size: 11px;
+  color: var(--mil);
+  font-weight: 600;
+  border: 1px solid var(--ligne);
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--terre-2);
+}
+
+/* --- Cartes KPI --- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+.kpi-card {
+  border: 1px solid var(--ligne);
+  border-radius: 14px;
+  background: var(--terre-2);
+  padding: 11px 12px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--c, var(--muet-2));
+}
+.kpi-code {
+  font-size: 9.5px;
+  letter-spacing: 0.8px;
+  color: var(--muet-2);
+  font-weight: 700;
+}
+.kpi-name {
+  font-size: 10.5px;
+  color: var(--muet);
+  margin: 1px 0 7px;
+  line-height: 1.25;
+  min-height: 26px;
+}
+.kpi-value {
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.kpi-target {
+  font-size: 12px;
+  color: var(--muet);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.kpi-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.kpi-pill {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.kpi-pill.ok {
+  background: rgba(91, 190, 122, 0.15);
+  color: var(--ok);
+}
+.kpi-pill.warn {
+  background: rgba(224, 179, 65, 0.15);
+  color: var(--warn);
+}
+.kpi-pill.alert {
+  background: rgba(217, 105, 78, 0.16);
+  color: var(--alert);
+}
+.kpi-trend {
+  font-size: 11px;
+  font-weight: 700;
+}
+.kpi-trend.up { color: var(--ok); }
+.kpi-trend.flat { color: var(--muet); }
+.kpi-trend.dn { color: var(--alert); }
+
+/* --- Cartes génériques --- */
+.card {
+  border: 1px solid var(--ligne);
+  border-radius: 14px;
+  background: var(--terre-2);
+  padding: 13px;
+  margin-bottom: 12px;
+}
+.card h3 {
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.card-subtitle {
+  font-size: 10px;
+  color: var(--muet);
+  margin-bottom: 10px;
+}
+
+/* --- Barre d'alerte --- */
+.alert-bar {
+  border: 1px solid rgba(217, 105, 78, 0.4);
+  background: rgba(217, 105, 78, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.alert-icon {
+  color: var(--alert);
+  font-size: 15px;
+  flex: none;
+  margin-top: 1px;
+}
+.alert-text {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.alert-text b {
+  color: var(--alert);
+}
+.alert-text .action-link {
+  color: var(--mil);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* --- Légendes graphiques --- */
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 9px;
+  font-size: 10px;
+  color: var(--muet);
+}
+.chart-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-swatch {
+  width: 11px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.legend-dash {
+  height: 0;
+  border-top: 2px dashed var(--mil);
+  width: 13px;
+}
+
+/* --- SVG charts natifs --- */
+.meal-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* --- Liste d'activités --- */
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--ligne);
+}
+.activity-item:last-child {
+  border-bottom: 0;
+}
+.activity-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--terre-3);
+  font-size: 14px;
+}
+.activity-info {
+  flex: 1;
+  min-width: 0;
+}
+.activity-info b {
+  font-size: 12px;
+  font-weight: 600;
+  display: block;
+}
+.activity-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--ligne);
+  margin-top: 5px;
+  overflow: hidden;
+}
+.activity-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+.activity-pct {
+  font-size: 13px;
+  font-weight: 700;
+  flex: none;
+}
+
+/* --- Formulaire --- */
+.form-card {
+  border: 1px solid var(--ligne);
+  border-radius: 14px;
+  background: var(--terre-2);
+  padding: 14px;
+}
+.field {
+  margin-bottom: 13px;
+}
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 6px;
+}
+.field .required {
+  color: var(--alert);
+}
+.field-input {
+  height: 38px;
+  border: 1px solid var(--ligne);
+  border-radius: 10px;
+  background: var(--terre);
+  display: flex;
+  align-items: center;
+  padding: 0 11px;
+  font-size: 12px;
+  color: var(--muet);
+}
+.segment-group {
+  display: flex;
+  gap: 7px;
+}
+.segment-group button {
+  flex: 1;
+  height: 38px;
+  border: 1px solid var(--ligne);
+  border-radius: 10px;
+  background: var(--terre);
+  color: var(--ivoire);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.segment-group button[aria-pressed="true"] {
+  border-color: var(--mil);
+  background: rgba(203, 161, 78, 0.14);
+  color: var(--mil);
+}
+.chip-row {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.chip {
+  font-size: 11px;
+  padding: 6px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--ligne);
+  background: var(--terre);
+  color: var(--muet);
+  cursor: pointer;
+  transition: all 200ms;
+}
+.chip.selected {
+  border-color: var(--feuille);
+  background: rgba(111, 168, 107, 0.13);
+  color: var(--feuille);
+}
+.save-btn {
+  width: 100%;
+  height: 42px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: linear-gradient(150deg, var(--mil), #b8923f);
+  color: #1a160c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  margin-top: 6px;
+}
+
+/* --- Chat / Assistant --- */
+.chat-message {
+  background: var(--terre-3);
+  border: 1px solid var(--ligne);
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* --- Note / info annexe --- */
+.info-note {
+  font-size: 11px;
+  color: var(--muet-2);
+  line-height: 1.5;
+  border-left: 2px solid var(--feuille);
+  padding-left: 10px;
+  margin-top: 6px;
+  margin-bottom: 10px;
+}
+
+/* --- Animation compteurs (désactivée en sobriété) --- */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
