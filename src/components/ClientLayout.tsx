@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 function getActiveTab(path: string): string {
   if (path.startsWith("/dashboard")) return "dash";
   if (path.startsWith("/activities")) return "act";
+  if (path.startsWith("/synthese")) return "synth";
   if (path.startsWith("/collecte")) return "collect";
   if (path.startsWith("/validation")) return "valid";
   if (path.startsWith("/analyse")) return "anal";
@@ -42,6 +43,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     const paths: Record<string, string> = {
       dash: "/dashboard",
       act: "/activities",
+      synth: "/synthese",
       collect: "/collecte",
       valid: "/validation",
       anal: "/analyse",
@@ -62,6 +64,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const navItems = [
     { id: "dash", icon: "📊", label: "Bord" },
     { id: "act", icon: "📋", label: "Activités" },
+    { id: "synth", icon: "📄", label: "Synthèse" },
     { id: "collect", icon: "📝", label: "Collecte", isAdd: true },
     { id: "valid", icon: "✅", label: "Validation" },
     { id: "anal", icon: "🎨", label: "Analyse" },
