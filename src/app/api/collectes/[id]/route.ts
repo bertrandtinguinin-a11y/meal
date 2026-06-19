@@ -30,3 +30,20 @@ export async function GET(
   }
   return NextResponse.json(data);
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  if (!fallback.isConfigured()) {
+    const ok = fallback.deleteCollecte(id);
+    if (!ok) return NextResponse.json({ error: "Collecte introuvable" }, { status: 404 });
+    return NextResponse.json({ success: true, message: "Collecte supprimée" });
+  }
+
+  const { error } = await supabase.from("collectes").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true, message: "Collecte supprimée" });
+}

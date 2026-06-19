@@ -145,6 +145,20 @@ export default function SynthesePage() {
     URL.revokeObjectURL(url);
   };
 
+  // Supprimer une collecte
+  const supprimerCollecte = async (id: string, nom: string) => {
+    if (!window.confirm(`🗑️ Supprimer la collecte "${nom}" ?\nCette action est irréversible.`)) return;
+    try {
+      const res = await fetch(`/api/collectes/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erreur suppression");
+      // Retirer du state local
+      setCollectes((prev) => prev.filter((c) => c.id !== id));
+    } catch (e) {
+      alert("❌ Erreur lors de la suppression");
+      console.error(e);
+    }
+  };
+
   return (
     <div>
       {/* En-tête */}
@@ -281,13 +295,22 @@ export default function SynthesePage() {
                     </td>
                     <td>{afficherStatut(c.statut)}</td>
                     <td>
-                      <button
-                        className="action-btn"
-                        onClick={() => {/* Vue détail à venir */}}
-                        title="Voir le détail"
-                      >
-                        👁️
-                      </button>
+                      <div className="row-actions">
+                        <button
+                          className="action-btn"
+                          onClick={() => {/* Vue détail */}}
+                          title="Voir le détail"
+                        >
+                          👁️
+                        </button>
+                        <button
+                          className="action-btn delete-btn"
+                          onClick={() => supprimerCollecte(c.id, c.indicateur_nom)}
+                          title="Supprimer"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -515,6 +538,14 @@ export default function SynthesePage() {
         .action-btn:hover {
           border-color: var(--feuille);
           background: color-mix(in srgb, var(--carte) 95%, var(--feuille));
+        }
+        .row-actions {
+          display: flex;
+          gap: 4px;
+        }
+        .delete-btn:hover {
+          border-color: #e74c3c !important;
+          background: rgba(231, 76, 60, 0.08) !important;
         }
 
         .pagination-bar {

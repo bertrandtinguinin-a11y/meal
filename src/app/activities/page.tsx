@@ -4,42 +4,65 @@ import { useState, useEffect } from "react";
 
 interface Activity {
   id: string;
-  nom: string;
-  emoji: string;
-  prevu: number;
-  realise: number;
-  categorie: string;
+  type: string;
+  titre: string;
+  description: string;
+  date: string;
   responsable: string;
-  statut: "en_cours" | "termine" | "retard" | "non_debute";
-  mois_cible: number;
+  statut: string;
 }
 
-const STATUTS: Record<string, { label: string; color: string }> = {
-  en_cours: { label: "En cours", color: "var(--warn)" },
-  termine: { label: "Terminé", color: "var(--ok)" },
-  retard: { label: "En retard", color: "var(--alert)" },
-  non_debute: { label: "Non débuté", color: "var(--muet-2)" },
+const STATUTS: Record<string, { label: string; color: string; icon: string }> = {
+  termine: { label: "Terminé", color: "var(--ok)", icon: "✅" },
+  en_cours: { label: "En cours", color: "var(--warn)", icon: "🔄" },
+  planifie: { label: "Planifié", color: "var(--muet-2)", icon: "📅" },
+  suspendu: { label: "Suspendu", color: "var(--alert)", icon: "⏸️" },
 };
+
+const TYPE_ICONS: Record<string, string> = {
+  collecte: "📋",
+  formation: "🎓",
+  distribution: "📦",
+  sante: "🏥",
+  marecharge: "🐟",
+  agro: "🌾",
+};
+
+const MOIS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 
 export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/activities")
-      .then((r) => r.json())
-      .then((d) => setActivities(d || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const charger = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/activities");
+      const data = await res.json();
+      setActivities(Array.isArray(data) ? data : []);
+    } catch {
+      setActivities([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const getPct = (v: number, p: number) => Math.min(Math.round((v / p) * 100), 100);
-  const getColor = (pct: number) =>
-    pct >= 100 ? "var(--ok)" : pct >= 75 ? "var(--warn)" : "var(--alert)";
+  useEffect(() => { charger(); }, []);
+
+  const supprimer = async (id: string, titre: string) => {
+    if (!window.confirm(`🗑️ Supprimer l'activité "${titre}" ?`)) return;
+    try {
+      const res = await fetch(`/api/activities?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setActivities((prev) => prev.filter((a) => a.id !== id));
+    } catch {
+      alert("❌ Erreur lors de la suppression");
+    }
+  };
 
   const total = activities.length;
   const termines = activities.filter((a) => a.statut === "termine").length;
-  const enRetard = activities.filter((a) => a.statut === "retard").length;
+  const enCours = activities.filter((a) => a.statut === "en_cours").length;
 
   if (loading) {
     return (
@@ -54,7 +77,7 @@ export default function ActivitiesPage() {
       <div className="section-header">
         <div>
           <span className="eyebrow">Suivi terrain</span>
-          <h2>Activités vs PTA</h2>
+          <h2>Activités &amp; PTA</h2>
         </div>
         <span className="period-badge tnum">Juin 2026</span>
       </div>
@@ -64,7 +87,7 @@ export default function ActivitiesPage() {
         {[
           { label: "Total", value: total, color: "var(--ivoire)" },
           { label: "Terminés", value: termines, color: "var(--ok)" },
-          { label: "Retard", value: enRetard, color: "var(--alert)" },
+          { label: "En cours", value: enCours, color: "var(--warn)" },
         ].map((s) => (
           <div key={s.label} className="card" style={{ textAlign: "center", padding: "10px 8px" }}>
             <div className="kpi-value" style={{ fontSize: 22, color: s.color }}>{s.value}</div>
@@ -73,64 +96,62 @@ export default function ActivitiesPage() {
         ))}
       </div>
 
-      {/* Filtres */}
-      <div className="card" style={{ padding: "8px 13px" }}>
-        <div className="chip-row">
-          {Object.entries(STATUTS).map(([key, s]) => {
-            const count = activities.filter((a) => a.statut === key).length;
-            return (
-              <span key={key} className="chip selected" style={{ fontSize: 10 }}>
-                {s.label} ({count})
-              </span>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Activités */}
       {activities.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: 30, color: "var(--muet)" }}>
           Aucune activité pour le moment
         </div>
       ) : (
-        <div className="card" style={{ padding: "4px 13px" }}>
-          {activities.map((act) => {
-            const pct = getPct(act.realise, act.prevu);
-            const color = getColor(pct);
-            const s = STATUTS[act.statut] || STATUTS.en_cours;
+        activities.map((act) => {
+          const s = STATUTS[act.statut] || STATUTS.planifie;
+          const icon = TYPE_ICONS[act.type] || "📌";
+          const mois = act.date ? MOIS[parseInt(act.date.slice(5, 7)) - 1] || "" : "";
 
-            return (
-              <div key={act.id} className="activity-item">
-                <div className="activity-icon">{act.emoji}</div>
-                <div className="activity-info">
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <b>{act.nom}</b>
+          return (
+            <div key={act.id} className="card" style={{ marginBottom: 8, padding: "10px 13px" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <div style={{ fontSize: 24, lineHeight: 1 }}>{icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <b style={{ fontSize: 13 }}>{act.titre}</b>
                     <span style={{
-                      fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 20,
+                      fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 20,
                       background: s.color + "18", color: s.color,
                     }}>
-                      {s.label}
+                      {s.icon} {s.label}
                     </span>
+                    {mois && <span className="tnum" style={{ fontSize: 10, color: "var(--muet-2)" }}>{mois}</span>}
                   </div>
-                  <div style={{ fontSize: 10, color: "var(--muet)", marginTop: 2 }}>
-                    {act.responsable} · Cible : {act.prevu} {act.categorie.toLowerCase()}
+                  <div style={{ fontSize: 11, color: "var(--muet)", marginTop: 3 }}>
+                    {act.responsable} · {act.description}
                   </div>
-                  <div className="activity-bar" style={{ marginTop: 4 }}>
-                    <i style={{ width: `${pct}%`, background: color }} />
+                  <div style={{ fontSize: 10, color: "var(--muet-2)", marginTop: 2 }}>
+                    📅 {act.date?.slice(0, 10) || "—"}
                   </div>
                 </div>
-                <span className="activity-pct" style={{ color }}>
-                  {act.realise}/{act.prevu}
-                </span>
+                <button
+                  className="action-btn delete-btn"
+                  onClick={() => supprimer(act.id, act.titre)}
+                  title="Supprimer"
+                  style={{
+                    background: "none", border: "1px solid var(--bord)", borderRadius: 6,
+                    padding: "4px 8px", cursor: "pointer", fontSize: 14, flexShrink: 0,
+                  }}
+                >
+                  🗑️
+                </button>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })
       )}
 
-      <div className="info-note">
-        PTA = Plan de Travail Annuel. Les activités sont mises à jour chaque semaine par les chefs d'équipe.
-      </div>
+      <style jsx>{`
+        .delete-btn:hover {
+          border-color: #e74c3c !important;
+          background: rgba(231, 76, 60, 0.08) !important;
+        }
+      `}</style>
     </div>
   );
 }

@@ -62,3 +62,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requis (?id=...)" }, { status: 400 });
+
+  if (!fallback.isConfigured()) {
+    const idx = activitiesMem.findIndex((a) => a.id === id);
+    if (idx === -1) return NextResponse.json({ error: "Activité introuvable" }, { status: 404 });
+    activitiesMem.splice(idx, 1);
+    return NextResponse.json({ success: true, message: "Activité supprimée" });
+  }
+
+  const { error } = await supabase.from("activities").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true, message: "Activité supprimée" });
+}

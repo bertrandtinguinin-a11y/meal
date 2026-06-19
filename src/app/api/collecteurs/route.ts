@@ -44,3 +44,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Données invalides: " + (e.message || "") }, { status: 400 });
   }
 }
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requis (?id=...)" }, { status: 400 });
+
+  if (!fallback.isConfigured()) {
+    const ok = fallback.deleteCollecteur(id);
+    if (!ok) return NextResponse.json({ error: "Collecteur introuvable" }, { status: 404 });
+    return NextResponse.json({ success: true, message: "Collecteur supprimé" });
+  }
+
+  const { error } = await supabase.from("collecteurs").delete().eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true, message: "Collecteur supprimé" });
+}
