@@ -10,6 +10,7 @@ function getActiveTab(path: string): string {
   if (path.startsWith("/collecte")) return "collect";
   if (path.startsWith("/validation")) return "valid";
   if (path.startsWith("/analyse")) return "anal";
+  if (path.startsWith("/import")) return "import";
   return "dash";
 }
 
@@ -19,6 +20,44 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [activeTab, setActiveTab] = useState("dash");
   const [ecoOpen, setEcoOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<string>("");
+
+  // Souscrire aux notifications push
+  const subscribePush = async () => {
+    if (!("Notification" in window)) {
+      alert("Ce navigateur ne supporte pas les notifications");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      alert("Notifications bloquées. Activez-les dans les paramètres du navigateur.");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      setNotifStatus("✅ Notifications déjà activées");
+      setTimeout(() => setNotifStatus(""), 3000);
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      setNotifStatus("🔔 Notifications activées !");
+      // Enregistrer l'abonnement
+      try {
+        await fetch("/api/notifications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            endpoint: "browser:" + navigator.userAgent.slice(0, 30),
+            keys: {},
+            user: "terrain",
+          }),
+        });
+      } catch {}
+      setTimeout(() => setNotifStatus(""), 3000);
+    } else {
+      setNotifStatus("❌ Notifications refusées");
+      setTimeout(() => setNotifStatus(""), 3000);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -47,6 +86,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       collect: "/collecte",
       valid: "/validation",
       anal: "/analyse",
+      import: "/import",
     };
     const target = paths[tab];
     if (target && window.location.pathname !== target) {
@@ -68,6 +108,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     { id: "collect", icon: "📝", label: "Collecte", isAdd: true },
     { id: "valid", icon: "✅", label: "Validation" },
     { id: "anal", icon: "🎨", label: "Analyse" },
+    { id: "import", icon: "📥", label: "Import" },
   ];
 
   // Rendu squelette pour le SSR (évite flash du mauvais thème)
@@ -93,6 +134,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               🌿 Sobriété
             </span>
           )}
+          {notifStatus && (
+            <span style={{
+              fontSize: 10, fontWeight: 600, color: "var(--feuille)",
+              background: "rgba(111,168,107,0.14)", borderRadius: 20, padding: "2px 8px",
+              animation: "fadeIn 0.3s",
+            }}>
+              {notifStatus}
+            </span>
+          )}
           <span>📶</span>
           <span>🔋 64%</span>
         </div>
@@ -109,6 +159,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="header-btns">
+            <button
+              className="icon-btn"
+              onClick={subscribePush}
+              title="Notifications"
+              aria-label="Notifications"
+              style={{ fontSize: 14 }}
+            >
+              🔔
+            </button>
             <button
               className="icon-btn"
               onClick={() => setIsClair(!isClair)}

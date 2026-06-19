@@ -122,6 +122,29 @@ export default function SynthesePage() {
     rejetes: collectes.filter((c) => c.statut === "rejete").length,
   };
 
+  // Exporter en CSV
+  const exporterCSV = (donnees: Collecte[]) => {
+    const entetes = ["Date", "Collecteur", "Indicateur", "Code", "Localite", "Zone", "Statut", "Valeurs"];
+    const lignes = donnees.map((c) => [
+      c.date_collecte,
+      c.collecteur_nom || "",
+      c.indicateur_nom || "",
+      c.indicateur_code || "",
+      c.localite || "",
+      c.zone || "",
+      c.statut || "",
+      Object.values(c.donnees || {}).filter((v) => typeof v === "number").join(" | "),
+    ]);
+    const csv = [entetes.join(","), ...lignes.map((l) => l.map((v) => `"${v}"`).join(","))].join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `meal-synthese-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       {/* En-tête */}
@@ -133,6 +156,15 @@ export default function SynthesePage() {
               ? `${stats.total} enregistrements · ${stats.valides} validés · ${stats.enAttente} en attente`
               : "Consultez et filtrez l'ensemble des collectes terrain"}
           </p>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            className="export-btn"
+            onClick={() => exporterCSV(filtrer)}
+            title="Exporter en CSV"
+          >
+            📥 CSV
+          </button>
         </div>
       </div>
 
@@ -495,6 +527,22 @@ export default function SynthesePage() {
         .pagination-info {
           font-size: 11px;
           color: var(--muet);
+        }
+        .export-btn {
+          background: color-mix(in srgb, var(--carte) 94%, var(--feuille));
+          border: 1px solid var(--feuille);
+          border-radius: 8px;
+          padding: 8px 14px;
+          color: var(--feuille);
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s;
+          white-space: nowrap;
+        }
+        .export-btn:hover {
+          background: var(--feuille);
+          color: #fff;
         }
         .pagination-btns {
           display: flex;
