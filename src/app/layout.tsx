@@ -3,11 +3,11 @@ import "./globals.css";
 import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
-  title: "MEAL — Monitoring & Evaluation",
-  description: "Suivi, collecte terrain & analyse personnalisée",
+  title: "MEAL-Pro — Monitoring & Evaluation",
+  description: "Suivi terrain, collecte de données & analyse personnalisée",
   manifest: "/manifest.json",
-  applicationName: "MEAL",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "MEAL" },
+  applicationName: "MEAL-Pro",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "MEAL-Pro" },
 };
 
 export const viewport: Viewport = {

@@ -2,34 +2,34 @@ import Link from "next/link";
 
 const features = [
   {
-    icon: "📊",
-    title: "KPIs en temps réel",
-    desc: "Visualisez et suivez vos indicateurs clés avec des graphiques interactifs et des barres de progression.",
+    icon: "📝",
+    title: "Collecte terrain",
+    desc: "Les agents saisissent les données depuis le terrain avec un formulaire adapté à chaque indicateur.",
   },
   {
-    icon: "🧠",
-    title: "Analyse intelligente",
-    desc: "L'IA analyse vos données, détecte les tendances et génère des recommandations actionnables.",
+    icon: "✅",
+    title: "Validation & feedback",
+    desc: "Le superviseur valide ou demande des corrections avec un message direct au collecteur.",
+  },
+  {
+    icon: "🎨",
+    title: "Analyse personnalisable",
+    desc: "Construisez vos propres vues : choisissez indicateurs, types de graphiques et disposition.",
   },
   {
     icon: "📱",
-    title: "Application mobile",
-    desc: "Installez MEAL sur votre téléphone comme une app native grâce à la technologie PWA.",
+    title: "Application mobile PWA",
+    desc: "Installez MEAL-Pro sur votre téléphone comme une app native. Fonctionne hors-ligne.",
   },
   {
-    icon: "📈",
-    title: "Prévisions",
-    desc: "Anticipez l'évolution de vos indicateurs avec des modèles de régression linéaire intégrés.",
+    icon: "📊",
+    title: "KPIs dynamiques",
+    desc: "Tableaux de bord automatiques qui se mettent à jour dès qu'une collecte est validée.",
   },
   {
-    icon: "🌙",
-    title: "Mode sombre",
-    desc: "Travaillez confortablement de jour comme de nuit avec un thème adaptatif.",
-  },
-  {
-    icon: "📋",
-    title: "Rapports automatiques",
-    desc: "Générez des rapports de performance structurés avec recommandations et prévisions.",
+    icon: "♻️",
+    title: "Éco-conçu",
+    desc: "Graphiques SVG natifs, mode sobriété, empreinte réduite. Pas de librairies lourdes.",
   },
 ];
 
@@ -42,16 +42,16 @@ export default function Home() {
           <span className="text-white text-3xl font-bold">M</span>
         </div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[var(--foreground)] mb-4">
-          MEAL
+          MEAL-Pro
         </h1>
         <p className="text-lg sm:text-xl text-[var(--muted-foreground)] max-w-xl mb-2">
           <strong className="text-[var(--foreground)]">M</strong>onitoring &{" "}
-          <strong className="text-[var(--foreground)]">E</strong>valuation with{" "}
-          <strong className="text-[var(--foreground)]">A</strong>I{" "}
+          <strong className="text-[var(--foreground)]">E</strong>valuation &{" "}
+          <strong className="text-[var(--foreground)]">A</strong>nalysis with{" "}
           <strong className="text-[var(--foreground)]">L</strong>ogic
         </p>
         <p className="text-sm text-[var(--muted-foreground)] mb-10 max-w-md">
-          Suivez vos indicateurs, analysez les tendances avec l&apos;IA, et prenez des décisions éclairées.
+          Collecte terrain, validation, analyse personnalisée. <br />Tout-en-un, zéro papier.
         </p>
 
         <Link
@@ -84,7 +84,7 @@ export default function Home() {
 
       {/* ── Footer ── */}
       <footer className="py-8 text-center text-xs text-[var(--muted-foreground)] border-t border-[var(--border)]">
-        MEAL • Monitoring & Evaluation with AI Logic • Next.js + Supabase
+        MEAL-Pro • Monitoring &amp; Evaluation Analysis • Next.js + Supabase
       </footer>
     </div>
   );

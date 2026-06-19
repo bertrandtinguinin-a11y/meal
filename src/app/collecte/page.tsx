@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-interface Indicateur {
-  id: string; code: string; nom: string; categorie: string;
-  type_chart: string; unite: string; icone: string;
-}
+interface Indicateur { id: string; code: string; nom: string; categorie: string; type_chart: string; unite: string; icone: string; objectif: number; baseline: number; }
 
 export default function CollectePage() {
   const [indicateurs, setIndicateurs] = useState<Indicateur[]>([]);
@@ -18,206 +15,206 @@ export default function CollectePage() {
   const [jsonError, setJsonError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState("");
-  const [template, setTemplate] = useState<any>(null);
 
-  useEffect(() => {
+  // États pour créer rapidement des données de base
+  const [showNewInd, setShowNewInd] = useState(false);
+  const [showNewColl, setShowNewColl] = useState(false);
+  const [newIndCode, setNewIndCode] = useState("");
+  const [newIndNom, setNewIndNom] = useState("");
+  const [newIndUnite, setNewIndUnite] = useState("");
+  const [newIndObj, setNewIndObj] = useState("100");
+  const [newCollNom, setNewCollNom] = useState("");
+  const [newCollZone, setNewCollZone] = useState("");
+
+  const load = () => {
     fetch("/api/indicateurs").then(r => r.json()).then(setIndicateurs);
     fetch("/api/collecteurs").then(r => r.json()).then(setCollecteurs);
-  }, []);
+  };
 
-  // Quand un indicateur est sélectionné, pré-remplir un template JSON
+  useEffect(load, []);
+
+  const selectedInd = indicateurs.find(i => i.id === indicateurId);
+
+  // Générer template JSON selon l'indicateur sélectionné
+  const getTemplate = (ind: Indicateur): Record<string, any> => {
+    const tpl: Record<string, any> = { total: null };
+    const code = ind.code?.toLowerCase() || "";
+    if (code.includes("femme") || code.includes("genre") || code.includes("f-")) {
+      tpl.hommes = null; tpl.femmes = null; tpl.total = null;
+    } else if (code.includes("kit") || code.includes("distrib")) {
+      tpl.quantite = null; tpl.type = "";
+    } else if (code.includes("cpn") || code.includes("sante")) {
+      tpl.nouvelles = null; tpl.total_suivies = null;
+    } else if (code.includes("seance") || code.includes("iec") || code.includes("formation")) {
+      tpl.seances = null; tpl.participants_h = null; tpl.participants_f = null;
+    } else if (code.includes("menage") || code.includes("securite")) {
+      tpl.menages_enquete = null; tpl.securises = null;
+    }
+    return tpl;
+  };
+
   useEffect(() => {
-    if (!indicateurId) { setTemplate(null); return; }
-    const ind = indicateurs.find(i => i.id === indicateurId);
-    if (!ind) return;
+    if (!indicateurId || !selectedInd) { setDonnees("{}"); return; }
+    setDonnees(JSON.stringify(getTemplate(selectedInd), null, 2));
+  }, [indicateurId]);
 
-    const sugg: Record<string, string | number | null> = { total: null };
-    if (ind.code === "P-1" || ind.code === "P-1F" || ind.code === "G-1") {
-      sugg.hommes = null; sugg.femmes = null; sugg.total = null;
-    } else if (ind.code === "P-4" || ind.code === "P-5") {
-      sugg.kits_distribues = null; sugg.type_semence = "";
-    } else if (ind.code === "P-7") {
-      sugg.nouvelles_cpn = null; sugg.total_suivies = null;
-    } else if (ind.code === "P-8") {
-      sugg.enfants_depistes = null; sugg.masculins = null; sugg.feminins = null;
-    } else if (ind.code === "P-9") {
-      sugg.seances = null; sugg.participants_h = null; sugg.participants_f = null;
-    } else if (ind.code === "R-1") {
-      sugg.menages_enquete = null; sugg.menages_securises = null; sugg.hfias_moyen = null;
-    }
-    setTemplate(sugg);
-    setDonnees(JSON.stringify(sugg, null, 2));
-    setJsonError("");
-  }, [indicateurId, indicateurs]);
+  const validerJson = (v: string) => {
+    setDonnees(v);
+    try { JSON.parse(v); setJsonError(""); }
+    catch { setJsonError("JSON invalide — vérifie la syntaxe"); }
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSuccess("");
-    setJsonError("");
+  const soumettre = async () => {
+    if (!collecteurId || !indicateurId || !localite) return;
 
-    // Valider JSON
-    let donneesParsed;
-    try {
-      donneesParsed = JSON.parse(donnees);
-    } catch {
-      setJsonError("JSON invalide. Vérifie le format.");
-      return;
-    }
+    let parsed;
+    try { parsed = JSON.parse(donnees); }
+    catch { setJsonError("JSON invalide"); return; }
 
-    if (!collecteurId || !indicateurId || !localite) {
-      setJsonError("Remplis tous les champs obligatoires.");
-      return;
-    }
-
-    const ind = indicateurs.find(i => i.id === indicateurId);
-    const coll = collecteurs.find(c => c.id === collecteurId);
-
+    const collecteur = collecteurs.find(c => c.id === collecteurId);
     setSubmitting(true);
     try {
-      const res = await fetch("/api/collectes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      await fetch("/api/collectes", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          collecteur_id: collecteurId,
-          collecteur_nom: coll?.nom || "",
-          indicateur_id: indicateurId,
-          indicateur_nom: ind?.nom || "",
-          indicateur_code: ind?.code || "",
-          localite,
-          zone: coll?.zone || "",
-          donnees: donneesParsed,
-          note_terrain: note,
+          collecteur_id: collecteurId, collecteur_nom: collecteur?.nom || "",
+          indicateur_id: indicateurId, indicateur_nom: selectedInd?.nom || "",
+          indicateur_code: selectedInd?.code || "",
+          localite, donnees: parsed, note_terrain: note,
         }),
       });
-      if (!res.ok) throw new Error("Erreur serveur");
-      setSuccess(`✅ Données envoyées ! En attente de validation par le superviseur.`);
-      // Reset form
-      setIndicateurId(""); setDonnees("{}"); setNote(""); setTemplate(null);
-    } catch {
-      setJsonError("Erreur d'envoi. Vérifie ta connexion.");
-    } finally {
-      setSubmitting(false);
-    }
+      setSuccess("✅ Collecte envoyée !");
+      setCollecteurId(""); setIndicateurId(""); setLocalite(""); setDonnees("{}"); setNote("");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch { setJsonError("Erreur réseau"); }
+    setSubmitting(false);
+  };
+
+  // Création rapide indicateur
+  const createIndicateur = async () => {
+    await fetch("/api/indicateurs", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: newIndCode, nom: newIndNom, unite: newIndUnite, objectif: Number(newIndObj), icone: "📊" }) });
+    setShowNewInd(false); setNewIndCode(""); setNewIndNom(""); setNewIndUnite(""); setNewIndObj("100");
+    load();
+  };
+
+  const createCollecteur = async () => {
+    await fetch("/api/collecteurs", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom: newCollNom, zone: newCollZone }) });
+    setShowNewColl(false); setNewCollNom(""); setNewCollZone("");
+    load();
   };
 
   return (
     <div className="collecte-page">
-      {/* En-tête */}
-      <div className="card" style={{ marginBottom: 12 }}>
-        <h2 style={{ fontSize: 18, display: "flex", alignItems: "center", gap: 8 }}>
-          📝 Nouvelle Collecte
-        </h2>
-        <p style={{ fontSize: 12, color: "var(--muet)", marginTop: 4 }}>
-            Remplis le formulaire pour envoyer les données terrain
-          </p>
-        </div>
+      <div className="card" style={{ marginBottom: 10 }}>
+        <h2 style={{ fontSize: 18, display: "flex", alignItems: "center", gap: 6 }}>📝 Nouvelle collecte terrain</h2>
+        <p style={{ fontSize: 12, color: "var(--muet)", marginTop: 2 }}>Soumets une donnée depuis le terrain</p>
+      </div>
 
       {success && (
-        <div className="card" style={{ borderLeft: "4px solid var(--feuille)", marginBottom: 12 }}>
-          <p style={{ color: "var(--feuille)", fontWeight: 600 }}>{success}</p>
-          <button className="btn" style={{ marginTop: 8 }} onClick={() => setSuccess("")}>
-            Nouvelle collecte
-          </button>
+        <div className="card" style={{ marginBottom: 8, borderColor: "#16a34a", textAlign: "center", background: "rgba(22,163,74,0.08)" }}>
+          <span style={{ color: "#16a34a", fontWeight: 600 }}>{success}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="collecte-form">
-        {/* Section: Qui ? */}
-        <div className="card">
-          <h3 className="section-title">👤 Qui collecte ?</h3>
-          <div className="form-grid">
-            <label className="field">
-              <span>Collecteur *</span>
-              <select value={collecteurId} onChange={e => setCollecteurId(e.target.value)} required>
-                <option value="">Sélectionne ton nom</option>
-                {collecteurs.filter(c => c.role !== "superviseur").map(c => (
-                  <option key={c.id} value={c.id}>{c.nom} — {c.zone}</option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Localité *</span>
-              <input
-                type="text" value={localite} onChange={e => setLocalite(e.target.value)}
-                placeholder="Ex: NKP-01, Village Boko"
-                required
-              />
-            </label>
+      {/* Créer rapidement un collecteur si vide */}
+      {collecteurs.length === 0 && !showNewColl && (
+        <div className="card" style={{ marginBottom: 8, borderStyle: "dashed", textAlign: "center" }}>
+          <p style={{ fontSize: 13, color: "var(--muet)" }}>
+            👤 Aucun collecteur enregistré
+          </p>
+          <button onClick={() => setShowNewColl(true)} className="btn btn-sm btn-primary" style={{ marginTop: 6 }}>
+            + Ajouter un collecteur
+          </button>
+        </div>
+      )}
+      {showNewColl && (
+        <div className="card" style={{ marginBottom: 8, borderColor: "var(--mil)" }}>
+          <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>👤 Nouveau collecteur</p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <input value={newCollNom} onChange={e => setNewCollNom(e.target.value)} placeholder="Nom complet" style={{ flex: 2, minWidth: 120, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--bord)", background: "var(--fond)", color: "var(--texte)", fontSize: 13 }} />
+            <input value={newCollZone} onChange={e => setNewCollZone(e.target.value)} placeholder="Zone (ex: Zone A)" style={{ flex: 1, minWidth: 100, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--bord)", background: "var(--fond)", color: "var(--texte)", fontSize: 13 }} />
+            <button onClick={createCollecteur} className="btn btn-sm btn-primary" disabled={!newCollNom}>✅ Créer</button>
+            <button onClick={() => setShowNewColl(false)} className="btn btn-sm">Annuler</button>
           </div>
         </div>
+      )}
 
-        {/* Section: Quoi ? */}
-        <div className="card">
-          <h3 className="section-title">📊 Quel indicateur ?</h3>
-          <label className="field">
-            <span>Indicateur *</span>
-            <select value={indicateurId} onChange={e => setIndicateurId(e.target.value)} required>
-              <option value="">Choisis un indicateur</option>
+      {/* Créer rapidement un indicateur si vide */}
+      {indicateurs.length === 0 && !showNewInd && (
+        <div className="card" style={{ marginBottom: 8, borderStyle: "dashed", textAlign: "center" }}>
+          <p style={{ fontSize: 13, color: "var(--muet)" }}>
+            📊 Aucun indicateur défini
+          </p>
+          <button onClick={() => setShowNewInd(true)} className="btn btn-sm btn-primary" style={{ marginTop: 6 }}>
+            + Créer un indicateur
+          </button>
+        </div>
+      )}
+      {showNewInd && (
+        <div className="card" style={{ marginBottom: 8, borderColor: "var(--mil)" }}>
+          <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>📊 Nouvel indicateur</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input value={newIndCode} onChange={e => setNewIndCode(e.target.value)} placeholder="Code (ex: P-1)" style={{ width: 80, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--bord)", background: "var(--fond)", color: "var(--texte)", fontSize: 13 }} />
+              <input value={newIndNom} onChange={e => setNewIndNom(e.target.value)} placeholder="Nom de l'indicateur" style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--bord)", background: "var(--fond)", color: "var(--texte)", fontSize: 13 }} />
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input value={newIndUnite} onChange={e => setNewIndUnite(e.target.value)} placeholder="Unité (ex: nombre, %)" style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--bord)", background: "var(--fond)", color: "var(--texte)", fontSize: 13 }} />
+              <input value={newIndObj} onChange={e => setNewIndObj(e.target.value)} placeholder="Objectif" type="number" style={{ width: 100, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--bord)", background: "var(--fond)", color: "var(--texte)", fontSize: 13 }} />
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={createIndicateur} className="btn btn-sm btn-primary" disabled={!newIndCode || !newIndNom}>✅ Créer</button>
+              <button onClick={() => setShowNewInd(false)} className="btn btn-sm">Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Formulaire principal */}
+      <div className="card">
+        <div className="collecte-form">
+          <div className="form-grid">
+            <div className="field">
+              <span>👤 Collecteur</span>
+              <select value={collecteurId} onChange={e => setCollecteurId(e.target.value)}>
+                <option value="">— Choisir —</option>
+                {collecteurs.map(c => (
+                  <option key={c.id} value={c.id}>{c.nom} {c.zone ? `(${c.zone})` : ""}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <span>📍 Localité</span>
+              <input value={localite} onChange={e => setLocalite(e.target.value)} placeholder="Ex: NKP-01" />
+            </div>
+          </div>
+          <div className="field">
+            <span>📊 Indicateur</span>
+            <select value={indicateurId} onChange={e => setIndicateurId(e.target.value)}>
+              <option value="">— Choisir —</option>
               {indicateurs.map(i => (
-                <option key={i.id} value={i.id}>
-                  {i.icone} {i.code} — {i.nom} ({i.unite})
-                </option>
+                <option key={i.id} value={i.id}>{i.icone} {i.code} — {i.nom} ({i.unite})</option>
               ))}
             </select>
-          </label>
-
-          {template && (
-            <div className="field" style={{ marginTop: 12 }}>
-              <span>Valeurs (JSON) *</span>
-              {(() => {
-                // Afficher les champs simplifiés
-                const keys = Object.keys(template);
-                return (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-                    {keys.map(k => (
-                      <label key={k} className="field-row">
-                        <span style={{ fontSize: 12, fontWeight: 500, minWidth: 120 }}>{k} :</span>
-                        <input
-                          type={typeof template[k] === "number" ? "number" : "text"}
-                          placeholder={typeof template[k] === "number" ? "0" : "..."}
-                          onChange={e => {
-                            const val = e.target.type === "number" ? (e.target.value ? Number(e.target.value) : null) : e.target.value;
-                            const newData = { ...JSON.parse(donnees), [k]: val };
-                            setDonnees(JSON.stringify(newData, null, 2));
-                          }}
-                          style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--bord)", background: "var(--fond)", color: "var(--texte)" }}
-                        />
-                      </label>
-                    ))}
-                    <details style={{ marginTop: 8 }}>
-                      <summary style={{ fontSize: 11, color: "var(--muet)", cursor: "pointer" }}>Éditer le JSON brut</summary>
-                      <textarea
-                        value={donnees}
-                        onChange={e => setDonnees(e.target.value)}
-                        rows={6}
-                        style={{ width: "100%", marginTop: 6, padding: 8, borderRadius: 6, border: "1px solid var(--bord)", fontFamily: "monospace", fontSize: 12, background: "var(--fond)", color: "var(--texte)" }}
-                      />
-                    </details>
-                    {jsonError && <p style={{ color: "var(--alert)", fontSize: 12 }}>{jsonError}</p>}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
+          </div>
+          <div className="field">
+            <span>📋 Données (JSON)</span>
+            <textarea value={donnees} onChange={e => validerJson(e.target.value)} rows={4} style={{ fontFamily: "monospace", fontSize: 12 }} />
+            {jsonError && <span style={{ fontSize: 11, color: "#dc2626" }}>{jsonError}</span>}
+            {selectedInd && !jsonError && <span style={{ fontSize: 11, color: "var(--muet)" }}>Template auto pour {selectedInd.nom}</span>}
+          </div>
+          <div className="field">
+            <span>📝 Note terrain (optionnelle)</span>
+            <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Observation..."
+              style={{ resize: "none" }} />
+          </div>
+          <button onClick={soumettre} className="btn btn-primary" disabled={submitting || !collecteurId || !indicateurId || !localite || !!jsonError} style={{ marginTop: 4 }}>
+            {submitting ? "⏳ Envoi..." : "📤 Envoyer la collecte"}
+          </button>
         </div>
-
-        {/* Section: Note terrain */}
-        <div className="card">
-          <h3 className="section-title">💬 Note terrain</h3>
-          <label className="field">
-            <span>Commentaire (optionnel)</span>
-            <textarea
-              value={note} onChange={e => setNote(e.target.value)}
-              placeholder="Ex: Bonne participation, 2 absents justifiés..."
-              rows={3}
-            />
-          </label>
-        </div>
-
-        <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: "100%" }}>
-          {submitting ? "⏳ Envoi en cours..." : "📤 Envoyer les données"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

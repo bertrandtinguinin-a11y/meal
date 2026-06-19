@@ -101,7 +101,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <div className="brand">
             <div className="logo" aria-hidden="true" />
             <div>
-              <h1>MEAL</h1>
+              <h1>MEAL-Pro</h1>
               <small>Monitoring &amp; Evaluation</small>
             </div>
           </div>

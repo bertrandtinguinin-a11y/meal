@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import KpiCard from "@/components/KpiCard";
-import KpiChart from "@/components/KpiChart";
-import AiAssistant from "@/components/AiAssistant";
 
 interface KPI {
   id: string;
@@ -11,128 +8,103 @@ interface KPI {
   valeur: number;
   objectif: number;
   unite: string;
-  categorie: string;
-  tendance: "haussière" | "stable" | "baissière";
+  icone: string;
+  evolution: number;
 }
 
-const KPIS_PAR_DEFAUT: KPI[] = [
-  { id: "1", nom: "Chiffre d'Affaires", valeur: 1850000, objectif: 2000000, unite: "FCFA", categorie: "Finance", tendance: "haussière" },
-  { id: "2", nom: "Marge Bénéficiaire", valeur: 22, objectif: 25, unite: "%", categorie: "Finance", tendance: "stable" },
-  { id: "3", nom: "Production Journalière", valeur: 340, objectif: 400, unite: "unités", categorie: "Production", tendance: "baissière" },
-  { id: "4", nom: "Taux d'Occupation", valeur: 78, objectif: 85, unite: "%", categorie: "RH", tendance: "haussière" },
-  { id: "5", nom: "Nouveaux Clients", valeur: 12, objectif: 15, unite: "clients", categorie: "Commercial", tendance: "stable" },
-  { id: "6", nom: "Dépenses Mensuelles", valeur: 890000, objectif: 800000, unite: "FCFA", categorie: "Finance", tendance: "haussière" },
-];
-
-const HISTORIQUE: Record<string, number[]> = {
-  "1": [1650000, 1700000, 1720000, 1800000, 1820000, 1850000],
-  "2": [20, 21, 21, 22, 22, 22],
-  "3": [380, 390, 370, 360, 350, 340],
-  "4": [72, 74, 75, 76, 77, 78],
-  "5": [10, 11, 10, 12, 11, 12],
-  "6": [750000, 770000, 800000, 820000, 850000, 890000],
-};
-
 export default function Dashboard() {
-  const [kpis] = useState<KPI[]>(KPIS_PAR_DEFAUT);
-  const [dark, setDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [kpis, setKpis] = useState<KPI[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-    setDark(document.documentElement.classList.contains("dark"));
-    const observer = new MutationObserver(() => {
-      setDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
+    fetch("/api/kpis")
+      .then(r => r.json())
+      .then(data => {
+        setKpis(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  if (!mounted) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-lg text-[var(--muted-foreground)] animate-pulse">Chargement...</div>
+        <div className="text-lg animate-pulse" style={{ color: "var(--muet)" }}>Chargement...</div>
       </div>
     );
   }
 
-  // Stats globales
-  const total = kpis.length;
-  const ok = kpis.filter((k) => (k.valeur / k.objectif) >= 1).length;
-  const warning = kpis.filter((k) => (k.valeur / k.objectif) >= 0.75 && (k.valeur / k.objectif) < 1).length;
-  const critical = kpis.filter((k) => (k.valeur / k.objectif) < 0.75).length;
-  const tauxCompletion = total > 0 ? Math.round(((ok + warning * 0.5) / total) * 100) : 0;
-
-  return (
-    <div className="space-y-8">
-      {/* ── En-tête ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">Tableau de Bord</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-1">
-            Suivi des indicateurs clés de performance • {new Date().toLocaleDateString("fr-FR")}
+  // État vide
+  if (kpis.length === 0) {
+    return (
+      <div className="analyse-page">
+        <div className="card" style={{ textAlign: "center", padding: 40 }}>
+          <p style={{ fontSize: 40, marginBottom: 8 }}>📊</p>
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Bienvenue sur MEAL-Pro</h2>
+          <p style={{ fontSize: 13, color: "var(--muet)", maxWidth: 320, margin: "0 auto", lineHeight: 1.5 }}>
+            Ton tableau de bord s&apos;affichera ici dès que les premières collectes seront validées.
           </p>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-[var(--muted-foreground)]">Taux global</span>
-          <span className="text-lg font-bold text-[var(--primary)]">{tauxCompletion}%</span>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
+            <a href="/collecte" className="btn btn-primary">📝 Nouvelle collecte</a>
+            <a href="/validation" className="btn">✅ Valider</a>
+            <a href="/analyse" className="btn">🎨 Analyse</a>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* ── Cartes Résumé ── */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="KPIs suivis" value={total} icon="📊" color="var(--primary)" />
-        <MetricCard label="Atteints" value={ok} icon="✅" color="#22c55e" />
-        <MetricCard label="Vigilance" value={warning} icon="⚡" color="#eab308" />
-        <MetricCard label="Critiques" value={critical} icon="🔴" color="#ef4444" />
-      </div>
+  const total = kpis.length;
+  const ok = kpis.filter(k => k.objectif > 0 && k.valeur / k.objectif >= 1).length;
+  const warning = kpis.filter(k => k.objectif > 0 && k.valeur / k.objectif >= 0.75 && k.valeur / k.objectif < 1).length;
+  const critical = kpis.filter(k => k.objectif > 0 && k.valeur / k.objectif < 0.75).length;
+  const taux = total > 0 ? Math.round(((ok + warning * 0.5) / total) * 100) : 0;
 
-      {/* ── Grille KPIs ── */}
-      <section>
-        <h2 className="text-base font-bold uppercase tracking-wider text-[var(--muted-foreground)] mb-4">
-          Indicateurs
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {kpis.map((kpi) => (
-            <KpiCard key={kpi.id} kpi={kpi} />
-          ))}
-        </div>
-      </section>
-
-      {/* ── Graphiques ── */}
-      <section>
-        <h2 className="text-base font-bold uppercase tracking-wider text-[var(--muted-foreground)] mb-4">
-          Évolution
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {kpis.slice(0, 4).map((kpi) => (
-            <KpiChart key={kpi.id} kpi={kpi} data={HISTORIQUE[kpi.id] || []} dark={dark} />
-          ))}
-        </div>
-      </section>
-
-      {/* ── Assistant IA ── */}
-      <section>
-        <h2 className="text-base font-bold uppercase tracking-wider text-[var(--muted-foreground)] mb-4">
-          Analyse Intelligente
-        </h2>
-        <AiAssistant kpis={kpis} historique={HISTORIQUE} />
-      </section>
-    </div>
-  );
-}
-
-// ─── Petit composant métrique ──────────────────────────────────────────────────
-
-function MetricCard({ label, value, icon, color }: { label: string; value: number; icon: string; color: string }) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-white dark:bg-[var(--card)] p-4 sm:p-5 hover:shadow-md transition-all duration-200">
-      <div className="flex items-start justify-between mb-1">
-        <span className="text-sm text-[var(--muted-foreground)] font-medium">{label}</span>
-        <span className="text-lg">{icon}</span>
+    <div className="analyse-page">
+      <div className="card" style={{ marginBottom: 8 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700 }}>📊 Tableau de bord</h2>
+          <span style={{ fontSize: 22, fontWeight: 700, color: "var(--feuille)" }}>{taux}%</span>
+        </div>
+        <p style={{ fontSize: 12, color: "var(--muet)", marginTop: 2 }}>
+          {new Date().toLocaleDateString("fr-FR")} · {total} indicateur{total > 1 ? "s" : ""}
+        </p>
       </div>
-      <div className="text-3xl font-extrabold tracking-tight" style={{ color }}>
-        {value}
+
+      {/* Cartes résumé */}
+      <div className="validation-stats" style={{ marginBottom: 10 }}>
+        <div className="stat-box"><span className="stat-num">{total}</span><span className="stat-label">Suivis</span></div>
+        <div className="stat-box"><span className="stat-num" style={{ color: "#16a34a" }}>{ok}</span><span className="stat-label">Atteints</span></div>
+        <div className="stat-box"><span className="stat-num" style={{ color: "#ca8a04" }}>{warning}</span><span className="stat-label">Vigilance</span></div>
+        <div className="stat-box"><span className="stat-num" style={{ color: "#dc2626" }}>{critical}</span><span className="stat-label">Critiques</span></div>
+      </div>
+
+      {/* KPIs */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {kpis.map(kpi => {
+          const pct = kpi.objectif > 0 ? Math.min((kpi.valeur / kpi.objectif) * 100, 100) : 0;
+          const color = pct >= 100 ? "#16a34a" : pct >= 75 ? "#ca8a04" : "#dc2626";
+          return (
+            <div key={kpi.id} className="card" style={{ padding: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  {kpi.icone || "📊"} {kpi.nom}
+                </span>
+                <span style={{ fontSize: 15, fontWeight: 700, color }}>
+                  {kpi.valeur.toLocaleString()} {kpi.unite}
+                </span>
+              </div>
+              <div className="jauge-track" style={{ marginTop: 6 }}>
+                <div className="jauge-fill" style={{ width: `${pct}%`, background: color }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muet)", marginTop: 2 }}>
+                <span>Objectif : {kpi.objectif.toLocaleString()} {kpi.unite}</span>
+                <span>{Math.round(pct)}%</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

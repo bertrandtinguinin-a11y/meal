@@ -6,7 +6,8 @@ import { useEffect, useState, useCallback } from "react";
 interface Indicateur {
   id: string; code: string; nom: string; categorie: string;
   type_chart: string; unite: string; objectif: number; baseline: number;
-  valeur_courante: number; icone: string; historique: any[];
+  icone: string;
+  historique?: any[]; valeur_courante?: number;
   desagregation?: string[];
 }
 
@@ -31,7 +32,10 @@ const TYPE_CHARTS = [
 // ─── Composants de rendu ───────────────────────────────────────
 
 function BarreChart({ ind, periode }: { ind: Indicateur; periode: number }) {
-  const h = ind.historique?.slice(-periode) || [];
+  const h = (ind.historique || []).slice(-periode);
+  if (h.length === 0) {
+    return <div><div className="chart-header"><span>{ind.icone} <b>{ind.nom}</b></span></div><p style={{ fontSize: 11, color: "var(--muet)", textAlign: "center", padding: 12 }}>En attente de données...</p></div>;
+  }
   const max = Math.max(...h.map((d: any) => Math.max(d.valeur || 0, d.objectif || 1)), 1);
 
   return (
@@ -63,7 +67,10 @@ function BarreChart({ ind, periode }: { ind: Indicateur; periode: number }) {
 }
 
 function LigneChart({ ind, periode }: { ind: Indicateur; periode: number }) {
-  const h = ind.historique?.slice(-periode) || [];
+  const h = (ind.historique || []).slice(-periode);
+  if (h.length === 0) {
+    return <div><div className="chart-header"><span>{ind.icone} <b>{ind.nom}</b></span></div><p style={{ fontSize: 11, color: "var(--muet)", textAlign: "center", padding: 12 }}>En attente de données...</p></div>;
+  }
   const max = Math.max(...h.map((d: any) => Math.max(d.valeur || 0, d.objectif || 1)), 1) * 1.2;
   const w = 280; const stepX = w / (h.length - 1 || 1);
 
@@ -102,7 +109,8 @@ function LigneChart({ ind, periode }: { ind: Indicateur; periode: number }) {
 }
 
 function JaugeChart({ ind }: { ind: Indicateur }) {
-  const pct = ind.objectif > 0 ? Math.min((ind.valeur_courante / ind.objectif) * 100, 100) : 0;
+  const val = ind.valeur_courante || 0;
+  const pct = ind.objectif > 0 ? Math.min((val / ind.objectif) * 100, 100) : 0;
   const color = pct >= 80 ? "var(--feuille)" : pct >= 50 ? "var(--mil)" : "var(--alert)";
 
   return (
@@ -117,15 +125,16 @@ function JaugeChart({ ind }: { ind: Indicateur }) {
         <div className="jauge-fill" style={{ width: `${pct}%`, background: color }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muet)", marginTop: 2 }}>
-        <span>{ind.baseline} (base)</span>
-        <span>{ind.objectif} (cible)</span>
-      </div>
+            <span>{ind.baseline || 0} (base)</span>
+            <span>{ind.objectif || 0} (cible)</span>
+          </div>
     </div>
   );
 }
 
 function TableauIndicateur({ ind }: { ind: Indicateur }) {
-  const pct = ind.objectif > 0 ? Math.round((ind.valeur_courante / ind.objectif) * 100) : 0;
+  const val = ind.valeur_courante || 0;
+  const pct = ind.objectif > 0 ? Math.round((val / ind.objectif) * 100) : 0;
   const color = pct >= 80 ? "var(--feuille)" : pct >= 50 ? "var(--mil)" : "var(--alert)";
 
   return (
@@ -134,8 +143,8 @@ function TableauIndicateur({ ind }: { ind: Indicateur }) {
         <tr><td className="t-label">Code</td><td className="t-code">{ind.code}</td></tr>
         <tr><td className="t-label">Indicateur</td><td><b>{ind.nom}</b></td></tr>
         <tr><td className="t-label">Catégorie</td><td>{ind.categorie}</td></tr>
-        <tr><td className="t-label">Baseline</td><td>{ind.baseline} {ind.unite}</td></tr>
-        <tr><td className="t-label">Actuel</td><td style={{ color, fontWeight: 700 }}>{ind.valeur_courante} {ind.unite}</td></tr>
+        <tr><td className="t-label">Baseline</td><td>{ind.baseline || 0} {ind.unite}</td></tr>
+        <tr><td className="t-label">Actuel</td><td style={{ color, fontWeight: 700 }}>{val} {ind.unite}</td></tr>
         <tr><td className="t-label">Objectif</td><td>{ind.objectif} {ind.unite}</td></tr>
         <tr><td className="t-label">Réalisé</td><td><span className="jauge-track" style={{ display: "inline-block", width: 80, verticalAlign: "middle", marginRight: 6 }}>
           <span className="jauge-fill" style={{ width: `${pct}%`, background: color }} />
@@ -146,7 +155,8 @@ function TableauIndicateur({ ind }: { ind: Indicateur }) {
 }
 
 function CamembertChart({ ind }: { ind: Indicateur }) {
-  const pct = ind.objectif > 0 ? Math.min((ind.valeur_courante / ind.objectif) * 100, 100) : 0;
+  const val = ind.valeur_courante || 0;
+  const pct = ind.objectif > 0 ? Math.min((val / ind.objectif) * 100, 100) : 0;
   const reste = 100 - pct;
   const r = 35; const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
@@ -169,11 +179,11 @@ function CamembertChart({ ind }: { ind: Indicateur }) {
         <div>
           <div style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: pct >= 80 ? "var(--feuille)" : pct >= 50 ? "var(--mil)" : "var(--alert)", display: "inline-block" }} />
-            Atteint : {ind.valeur_courante} {ind.unite}
+            Atteint : {val} {ind.unite}
           </div>
           <div style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--bord)", display: "inline-block" }} />
-            Restant : {(ind.objectif - ind.valeur_courante).toFixed(1)} {ind.unite}
+            Restant : {((ind.objectif || 0) - val).toFixed(1)} {ind.unite}
           </div>
         </div>
       </div>
@@ -339,6 +349,14 @@ export default function AnalysePage() {
             Ajoute des blocs (indicateur + type de graphique) à ta vue :
           </p>
 
+          {indicateurs.length === 0 && (
+            <div style={{ padding: 12, textAlign: "center", background: "rgba(111,168,107,0.06)", borderRadius: 6, marginBottom: 8 }}>
+              <p style={{ fontSize: 13, color: "var(--muet)" }}>📊 Aucun indicateur pour l&apos;instant</p>
+              <p style={{ fontSize: 11, color: "var(--muet)", marginTop: 4 }}>Crée d&apos;abord des indicateurs depuis la page Collecte, puis reviens construire ta vue.</p>
+              <a href="/collecte" className="btn btn-sm btn-primary" style={{ marginTop: 8 }}>➡️ Aller à Collecte</a>
+            </div>
+          )}
+
           {editConfig.map((cfg, i) => {
             const ind = getInd(cfg.indicateur_id);
             return (
@@ -458,16 +476,16 @@ export default function AnalysePage() {
                   {activeVueData.config.map(cfg => {
                     const ind = getInd(cfg.indicateur_id);
                     if (!ind) return null;
-                    const pct = ind.objectif > 0 ? Math.round((ind.valeur_courante / ind.objectif) * 100) : 0;
+                    const pct = ind.objectif > 0 ? Math.round(((ind.valeur_courante || 0) / ind.objectif) * 100) : 0;
                     const color = pct >= 80 ? "var(--feuille)" : pct >= 50 ? "var(--mil)" : "var(--alert)";
                     return (
                       <tr key={cfg.indicateur_id}>
                         <td className="t-code">{ind.code}</td>
                         <td>{ind.nom}</td>
                         <td style={{ fontSize: 11 }}>{ind.categorie}</td>
-                        <td>{ind.baseline}</td>
-                        <td style={{ fontWeight: 600 }}>{ind.valeur_courante}</td>
-                        <td>{ind.objectif}</td>
+                        <td>{ind.baseline || 0}</td>
+                        <td style={{ fontWeight: 600 }}>{ind.valeur_courante || 0}</td>
+                        <td>{ind.objectif || 0}</td>
                         <td>
                           <span className="jauge-track" style={{ width: 60, display: "inline-block", verticalAlign: "middle", marginRight: 4 }}>
                             <span className="jauge-fill" style={{ width: `${pct}%`, background: color }} />
